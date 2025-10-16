@@ -1,31 +1,183 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi To-Do List</title>
+    <title>Warehouse Management System</title>
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <div class="todo-app">
-            <h1 class="title">Daftar Tugas</h1>
-            <form id="todo-form" class="input-section">
-                <input type="text" id="task-input" placeholder="Tambahkan tugas baru...">
-                <input type="date" id="date-input">
-                <button type="submit" id="add-button" class="btn">+</button>
-            </form>
-            <div class="controls">
-                <button id="filter-all" class="btn active-filter">Semua</button>
-                <button id="filter-pending" class="btn">Menunggu</button>
-                <button id="filter-completed" class="btn">Selesai</button>
-                <button id="delete-all" class="btn delete-btn">Hapus Semua</button>
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    <i class="fas fa-warehouse"></i>
+                    GudangMaster
+                </h1>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-items">0</span>
+                        <span class="stat-label">Total Barang</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="low-stock">0</span>
+                        <span class="stat-label">Stok Rendah</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="total-value">Rp 0</span>
+                        <span class="stat-label">Total Nilai</span>
+                    </div>
+                </div>
             </div>
-            <ul id="task-list" class="task-list">
-                <p id="no-task-message" class="no-task-found">Tidak ada tugas yang ditemukan</p>
-            </ul>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Form Section -->
+            <section class="input-section">
+                <div class="form-card">
+                    <h2><i class="fas fa-plus-circle"></i> Tambah Barang Baru</h2>
+                    <form id="item-form" class="item-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="item-name">Nama Barang</label>
+                                <input type="text" id="item-name" placeholder="Masukkan nama barang" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="item-sku">Kode SKU</label>
+                                <input type="text" id="item-sku" placeholder="Kode unik barang">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="item-category">Kategori</label>
+                                <select id="item-category">
+                                    <option value="elektronik">Elektronik</option>
+                                    <option value="pakaian">Pakaian</option>
+                                    <option value="makanan">Makanan</option>
+                                    <option value="perabotan">Perabotan</option>
+                                    <option value="lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="item-stock">Stok</label>
+                                <input type="number" id="item-stock" placeholder="Jumlah stok" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="item-price">Harga Satuan (Rp)</label>
+                                <input type="number" id="item-price" placeholder="Harga per item" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="item-minstock">Stok Minimum</label>
+                                <input type="number" id="item-minstock" placeholder="Stok minimum" min="0" value="5">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="item-description">Deskripsi</label>
+                            <textarea id="item-description" placeholder="Deskripsi barang (opsional)"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Simpan Barang
+                            </button>
+                            <button type="button" id="reset-form" class="btn btn-secondary">
+                                <i class="fas fa-redo"></i> Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Controls and Filters -->
+            <section class="controls-section">
+                <div class="controls-card">
+                    <div class="search-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Cari barang...">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <select id="category-filter">
+                            <option value="">Semua Kategori</option>
+                            <option value="elektronik">Elektronik</option>
+                            <option value="pakaian">Pakaian</option>
+                            <option value="makanan">Makanan</option>
+                            <option value="perabotan">Perabotan</option>
+                            <option value="lainnya">Lainnya</option>
+                        </select>
+                        
+                        <select id="stock-filter">
+                            <option value="">Semua Stok</option>
+                            <option value="low">Stok Rendah</option>
+                            <option value="out">Stok Habis</option>
+                            <option value="available">Stok Tersedia</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="export-btn" class="btn btn-outline">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button id="import-btn" class="btn btn-outline">
+                            <i class="fas fa-upload"></i> Import
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Items List -->
+            <section class="items-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-boxes"></i> Daftar Barang</h2>
+                    <span class="items-count" id="items-count">0 barang</span>
+                </div>
+
+                <div class="items-container">
+                    <div id="items-list" class="items-grid">
+                        <!-- Items will be dynamically inserted here -->
+                    </div>
+                    
+                    <div id="no-items" class="no-items">
+                        <i class="fas fa-box-open"></i>
+                        <h3>Tidak ada barang</h3>
+                        <p>Tambahkan barang pertama Anda untuk memulai</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Barang</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="edit-form" class="item-form">
+                <input type="hidden" id="edit-id">
+                <!-- Form fields same as add form -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Update Barang</button>
+                    <button type="button" class="btn btn-secondary close-modal">Batal</button>
+                </div>
+            </form>
         </div>
     </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notification-text"></span>
+    </div>
+
     <script src="js/script.js"></script>
 </body>
 </html>
