@@ -10,41 +10,66 @@ class WarehouseManager {
         this.bindEvents();
         this.renderItems();
         this.updateStats();
+        
+        // Debug: Check if localStorage is working
+        console.log('Items loaded:', this.items);
+        console.log('LocalStorage available:', typeof(Storage) !== "undefined");
     }
 
     bindEvents() {
         // Form submission
-        document.getElementById('item-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addItem();
-        });
+        const itemForm = document.getElementById('item-form');
+        if (itemForm) {
+            itemForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.addItem();
+            });
+        }
 
         // Reset form
-        document.getElementById('reset-form').addEventListener('click', () => {
-            this.resetForm();
-        });
+        const resetBtn = document.getElementById('reset-form');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetForm();
+            });
+        }
 
         // Search and filter
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            this.renderItems(e.target.value);
-        });
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.renderItems(e.target.value);
+            });
+        }
 
-        document.getElementById('category-filter').addEventListener('change', (e) => {
-            this.renderItems();
-        });
+        const categoryFilter = document.getElementById('category-filter');
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', (e) => {
+                this.renderItems();
+            });
+        }
 
-        document.getElementById('stock-filter').addEventListener('change', (e) => {
-            this.renderItems();
-        });
+        const stockFilter = document.getElementById('stock-filter');
+        if (stockFilter) {
+            stockFilter.addEventListener('change', (e) => {
+                this.renderItems();
+            });
+        }
 
         // Export/Import
-        document.getElementById('export-btn').addEventListener('click', () => {
-            this.exportData();
-        });
+        const exportBtn = document.getElementById('export-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportData();
+            });
+        }
 
-        document.getElementById('import-btn').addEventListener('click', () => {
-            this.importData();
-        });
+        const importBtn = document.getElementById('import-btn');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => {
+                this.importData();
+            });
+        }
 
         // Modal events
         document.querySelectorAll('.close-modal').forEach(btn => {
@@ -53,88 +78,230 @@ class WarehouseManager {
             });
         });
 
-        document.getElementById('edit-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.updateItem();
-        });
+        const editForm = document.getElementById('edit-form');
+        if (editForm) {
+            editForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.updateItem();
+            });
+        }
 
         // Close modal when clicking outside
-        document.getElementById('edit-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'edit-modal') {
-                this.closeModal();
-            }
-        });
+        const modal = document.getElementById('edit-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target.id === 'edit-modal') {
+                    this.closeModal();
+                }
+            });
+        }
     }
 
     generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        return 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     }
 
     addItem() {
-        const formData = new FormData(document.getElementById('item-form'));
+        console.log('Add item function called');
         
+        const itemName = document.getElementById('item-name');
+        const itemSku = document.getElementById('item-sku');
+        const itemCategory = document.getElementById('item-category');
+        const itemStock = document.getElementById('item-stock');
+        const itemPrice = document.getElementById('item-price');
+        const itemMinstock = document.getElementById('item-minstock');
+        const itemDescription = document.getElementById('item-description');
+
+        // Validasi input
+        if (!itemName || !itemStock || !itemPrice) {
+            this.showNotification('Error: Form elements not found!', 'error');
+            return;
+        }
+
+        const name = itemName.value.trim();
+        const sku = itemSku.value.trim() || `SKU-${Date.now()}`;
+        const category = itemCategory.value;
+        const stock = parseInt(itemStock.value);
+        const price = parseInt(itemPrice.value);
+        const minStock = parseInt(itemMinstock.value);
+        const description = itemDescription.value.trim();
+
+        console.log('Form data:', { name, sku, category, stock, price, minStock, description });
+
+        // Validasi data
+        if (!name) {
+            this.showNotification('Nama barang tidak boleh kosong!', 'error');
+            itemName.focus();
+            return;
+        }
+
+        if (isNaN(stock) || stock < 0) {
+            this.showNotification('Stok harus berupa angka yang valid!', 'error');
+            itemStock.focus();
+            return;
+        }
+
+        if (isNaN(price) || price < 0) {
+            this.showNotification('Harga harus berupa angka yang valid!', 'error');
+            itemPrice.focus();
+            return;
+        }
+
         const item = {
             id: this.generateId(),
-            name: document.getElementById('item-name').value.trim(),
-            sku: document.getElementById('item-sku').value.trim() || `SKU-${Date.now()}`,
-            category: document.getElementById('item-category').value,
-            stock: parseInt(document.getElementById('item-stock').value),
-            price: parseInt(document.getElementById('item-price').value),
-            minStock: parseInt(document.getElementById('item-minstock').value),
-            description: document.getElementById('item-description').value.trim(),
+            name: name,
+            sku: sku,
+            category: category,
+            stock: stock,
+            price: price,
+            minStock: minStock || 5,
+            description: description,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
 
-        if (!item.name || isNaN(item.stock) || isNaN(item.price)) {
-            this.showNotification('Harap isi semua field yang diperlukan!', 'error');
-            return;
-        }
+        console.log('New item:', item);
 
+        // Tambahkan item ke array
         this.items.unshift(item);
-        this.saveToLocalStorage();
+        
+        // Simpan ke localStorage
+        const saveResult = this.saveToLocalStorage();
+        console.log('Save result:', saveResult);
+        
+        // Update tampilan
         this.renderItems();
         this.updateStats();
         this.resetForm();
+        
         this.showNotification('Barang berhasil ditambahkan!', 'success');
     }
 
+    saveToLocalStorage() {
+        try {
+            localStorage.setItem('warehouseItems', JSON.stringify(this.items));
+            console.log('Data saved to localStorage. Items count:', this.items.length);
+            return true;
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+            this.showNotification('Error menyimpan data!', 'error');
+            return false;
+        }
+    }
+
     editItem(id) {
+        console.log('Editing item:', id);
         const item = this.items.find(item => item.id === id);
-        if (!item) return;
+        if (!item) {
+            this.showNotification('Barang tidak ditemukan!', 'error');
+            return;
+        }
 
         this.currentEditId = id;
         
-        // Fill form with item data
-        document.getElementById('edit-id').value = item.id;
-        document.getElementById('edit-form').querySelector('[name="name"]').value = item.name;
-        document.getElementById('edit-form').querySelector('[name="sku"]').value = item.sku;
-        document.getElementById('edit-form').querySelector('[name="category"]').value = item.category;
-        document.getElementById('edit-form').querySelector('[name="stock"]').value = item.stock;
-        document.getElementById('edit-form').querySelector('[name="price"]').value = item.price;
-        document.getElementById('edit-form').querySelector('[name="minstock"]').value = item.minStock;
-        document.getElementById('edit-form').querySelector('[name="description"]').value = item.description;
+        // Isi form edit dengan data item
+        // Buat form edit yang sederhana dulu
+        this.openEditModal(item);
+    }
+
+    openEditModal(item) {
+        const modal = document.getElementById('edit-modal');
+        const modalContent = modal.querySelector('.modal-content');
+        
+        modalContent.innerHTML = `
+            <div class="modal-header">
+                <h3>Edit Barang</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <form id="edit-form" class="item-form">
+                <input type="hidden" id="edit-id" value="${item.id}">
+                <div class="form-group">
+                    <label for="edit-name">Nama Barang</label>
+                    <input type="text" id="edit-name" value="${item.name}" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-sku">Kode SKU</label>
+                    <input type="text" id="edit-sku" value="${item.sku}">
+                </div>
+                <div class="form-group">
+                    <label for="edit-category">Kategori</label>
+                    <select id="edit-category">
+                        <option value="elektronik" ${item.category === 'elektronik' ? 'selected' : ''}>Elektronik</option>
+                        <option value="pakaian" ${item.category === 'pakaian' ? 'selected' : ''}>Pakaian</option>
+                        <option value="makanan" ${item.category === 'makanan' ? 'selected' : ''}>Makanan</option>
+                        <option value="perabotan" ${item.category === 'perabotan' ? 'selected' : ''}>Perabotan</option>
+                        <option value="lainnya" ${item.category === 'lainnya' ? 'selected' : ''}>Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-stock">Stok</label>
+                        <input type="number" id="edit-stock" value="${item.stock}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-price">Harga (Rp)</label>
+                        <input type="number" id="edit-price" value="${item.price}" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-minstock">Stok Minimum</label>
+                    <input type="number" id="edit-minstock" value="${item.minStock}" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Deskripsi</label>
+                    <textarea id="edit-description">${item.description || ''}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Barang
+                    </button>
+                    <button type="button" class="btn btn-secondary close-modal">
+                        <i class="fas fa-times"></i> Batal
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // Re-bind events untuk modal baru
+        modal.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
+        modal.querySelector('#edit-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.updateItem();
+        });
 
         this.openModal();
     }
 
     updateItem() {
-        const formData = new FormData(document.getElementById('edit-form'));
-        
-        const updatedItem = {
-            name: formData.get('name').trim(),
-            sku: formData.get('sku').trim(),
-            category: formData.get('category'),
-            stock: parseInt(formData.get('stock')),
-            price: parseInt(formData.get('price')),
-            minStock: parseInt(formData.get('minstock')),
-            description: formData.get('description').trim(),
-            updatedAt: new Date().toISOString()
-        };
+        const id = document.getElementById('edit-id').value;
+        const name = document.getElementById('edit-name').value.trim();
+        const sku = document.getElementById('edit-sku').value.trim();
+        const category = document.getElementById('edit-category').value;
+        const stock = parseInt(document.getElementById('edit-stock').value);
+        const price = parseInt(document.getElementById('edit-price').value);
+        const minStock = parseInt(document.getElementById('edit-minstock').value);
+        const description = document.getElementById('edit-description').value.trim();
 
-        const index = this.items.findIndex(item => item.id === this.currentEditId);
+        // Validasi
+        if (!name || isNaN(stock) || isNaN(price)) {
+            this.showNotification('Harap isi semua field yang diperlukan!', 'error');
+            return;
+        }
+
+        const index = this.items.findIndex(item => item.id === id);
         if (index !== -1) {
-            this.items[index] = { ...this.items[index], ...updatedItem };
+            this.items[index] = {
+                ...this.items[index],
+                name,
+                sku,
+                category,
+                stock,
+                price,
+                minStock,
+                description,
+                updatedAt: new Date().toISOString()
+            };
+
             this.saveToLocalStorage();
             this.renderItems();
             this.updateStats();
@@ -189,13 +356,18 @@ class WarehouseManager {
         const noItems = document.getElementById('no-items');
         const itemsCount = document.getElementById('items-count');
         
-        const categoryFilter = document.getElementById('category-filter').value;
-        const stockFilter = document.getElementById('stock-filter').value;
+        if (!itemsList || !noItems || !itemsCount) {
+            console.error('Required DOM elements not found!');
+            return;
+        }
+        
+        const categoryFilter = document.getElementById('category-filter')?.value || '';
+        const stockFilter = document.getElementById('stock-filter')?.value || '';
         
         let filteredItems = this.items.filter(item => {
             const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                item.description.toLowerCase().includes(searchTerm.toLowerCase());
+                                (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
             
             const matchesCategory = !categoryFilter || item.category === categoryFilter;
             
@@ -204,6 +376,8 @@ class WarehouseManager {
             
             return matchesSearch && matchesCategory && matchesStock;
         });
+
+        console.log('Filtered items:', filteredItems);
 
         if (filteredItems.length === 0) {
             itemsList.style.display = 'none';
@@ -221,8 +395,8 @@ class WarehouseManager {
                     <div class="item-card ${stockStatus === 'low' ? 'low-stock' : ''} ${stockStatus === 'out' ? 'out-of-stock' : ''}">
                         <div class="item-header">
                             <div>
-                                <div class="item-name">${item.name}</div>
-                                <div class="item-sku">${item.sku}</div>
+                                <div class="item-name">${this.escapeHtml(item.name)}</div>
+                                <div class="item-sku">${this.escapeHtml(item.sku)}</div>
                             </div>
                             <span class="item-category">${this.formatCategory(item.category)}</span>
                         </div>
@@ -234,7 +408,7 @@ class WarehouseManager {
                             </div>
                             <div class="item-price">${this.formatPrice(item.price)}</div>
                             <div class="item-total-value">Total: ${this.formatPrice(totalValue)}</div>
-                            ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
+                            ${item.description ? `<div class="item-description">${this.escapeHtml(item.description)}</div>` : ''}
                             <div class="item-updated">Terakhir update: ${new Date(item.updatedAt).toLocaleDateString('id-ID')}</div>
                         </div>
                         
@@ -254,6 +428,12 @@ class WarehouseManager {
         itemsCount.textContent = `${filteredItems.length} barang`;
     }
 
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     updateStats() {
         const totalItems = this.items.length;
         const lowStockItems = this.items.filter(item => 
@@ -262,42 +442,58 @@ class WarehouseManager {
         ).length;
         const totalValue = this.items.reduce((sum, item) => sum + (item.stock * item.price), 0);
 
-        document.getElementById('total-items').textContent = totalItems;
-        document.getElementById('low-stock').textContent = lowStockItems;
-        document.getElementById('total-value').textContent = this.formatPrice(totalValue);
+        const totalItemsEl = document.getElementById('total-items');
+        const lowStockEl = document.getElementById('low-stock');
+        const totalValueEl = document.getElementById('total-value');
+
+        if (totalItemsEl) totalItemsEl.textContent = totalItems;
+        if (lowStockEl) lowStockEl.textContent = lowStockItems;
+        if (totalValueEl) totalValueEl.textContent = this.formatPrice(totalValue);
     }
 
     resetForm() {
-        document.getElementById('item-form').reset();
-        document.getElementById('item-minstock').value = 5;
+        const form = document.getElementById('item-form');
+        if (form) {
+            form.reset();
+            const minStock = document.getElementById('item-minstock');
+            if (minStock) minStock.value = 5;
+        }
     }
 
     openModal() {
-        document.getElementById('edit-modal').style.display = 'block';
-        document.body.style.overflow = 'hidden';
+        const modal = document.getElementById('edit-modal');
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
     }
 
     closeModal() {
-        document.getElementById('edit-modal').style.display = 'none';
-        document.body.style.overflow = 'auto';
-        this.currentEditId = null;
-        document.getElementById('edit-form').reset();
-    }
-
-    saveToLocalStorage() {
-        localStorage.setItem('warehouseItems', JSON.stringify(this.items));
+        const modal = document.getElementById('edit-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            this.currentEditId = null;
+        }
     }
 
     exportData() {
-        const dataStr = JSON.stringify(this.items, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = `warehouse-data-${new Date().toISOString().split('T')[0]}.json`;
-        link.click();
-        
-        this.showNotification('Data berhasil diexport!', 'success');
+        try {
+            const dataStr = JSON.stringify(this.items, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `warehouse-data-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showNotification('Data berhasil diexport!', 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            this.showNotification('Error mengexport data!', 'error');
+        }
     }
 
     importData() {
@@ -307,6 +503,8 @@ class WarehouseManager {
         
         input.onchange = (e) => {
             const file = e.target.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
             
             reader.onload = (event) => {
@@ -314,13 +512,21 @@ class WarehouseManager {
                     const importedItems = JSON.parse(event.target.result);
                     
                     if (Array.isArray(importedItems)) {
-                        // Validate imported items structure
+                        // Validasi struktur item
                         const validItems = importedItems.filter(item => 
-                            item.name && typeof item.stock === 'number' && typeof item.price === 'number'
+                            item && item.name && typeof item.stock === 'number' && typeof item.price === 'number'
                         );
                         
                         if (validItems.length > 0) {
-                            this.items = [...validItems, ...this.items];
+                            // Generate new IDs untuk menghindari duplikasi
+                            const newItems = validItems.map(item => ({
+                                ...item,
+                                id: this.generateId(),
+                                createdAt: item.createdAt || new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            }));
+                            
+                            this.items = [...newItems, ...this.items];
                             this.saveToLocalStorage();
                             this.renderItems();
                             this.updateStats();
@@ -332,7 +538,8 @@ class WarehouseManager {
                         this.showNotification('Format file tidak valid!', 'error');
                     }
                 } catch (error) {
-                    this.showNotification('Error membaca file!', 'error');
+                    console.error('Import error:', error);
+                    this.showNotification('Error membaca file! Pastikan file format JSON valid.', 'error');
                 }
             };
             
@@ -346,6 +553,12 @@ class WarehouseManager {
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notification-text');
         
+        if (!notification || !notificationText) {
+            console.log(`Notification [${type}]: ${message}`);
+            alert(message); // Fallback ke alert
+            return;
+        }
+        
         notificationText.textContent = message;
         notification.className = `notification ${type} show`;
         
@@ -355,44 +568,63 @@ class WarehouseManager {
     }
 }
 
-// Initialize the warehouse manager when DOM is loaded
+// Test function untuk menambah sample data
+function addSampleData() {
+    if (typeof warehouseManager !== 'undefined') {
+        const sampleItems = [
+            {
+                id: warehouseManager.generateId(),
+                name: 'Laptop ASUS ROG',
+                sku: 'ELEC-LAP-001',
+                category: 'elektronik',
+                stock: 15,
+                price: 15000000,
+                minStock: 5,
+                description: 'Laptop gaming high-end',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: warehouseManager.generateId(),
+                name: 'Kaos Polo Shirt',
+                sku: 'CLOTH-POL-001',
+                category: 'pakaian',
+                stock: 2,
+                price: 150000,
+                minStock: 10,
+                description: 'Kaos polo cotton premium',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ];
+
+        sampleItems.forEach(item => {
+            warehouseManager.items.unshift(item);
+        });
+
+        warehouseManager.saveToLocalStorage();
+        warehouseManager.renderItems();
+        warehouseManager.updateStats();
+        warehouseManager.showNotification('Sample data berhasil ditambahkan!', 'success');
+    }
+}
+
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.warehouseManager = new WarehouseManager();
+    
+    // Untuk testing: tambah tombol sample data
+    const controlsCard = document.querySelector('.controls-card');
+    if (controlsCard) {
+        const sampleBtn = document.createElement('button');
+        sampleBtn.className = 'btn btn-outline';
+        sampleBtn.innerHTML = '<i class="fas fa-vial"></i> Tambah Sample Data';
+        sampleBtn.onclick = addSampleData;
+        controlsCard.appendChild(sampleBtn);
+    }
 });
 
-// Add some sample data for demonstration
-function addSampleData() {
-    const sampleItems = [
-        {
-            id: 'sample1',
-            name: 'Laptop ASUS ROG',
-            sku: 'ELEC-LAP-001',
-            category: 'elektronik',
-            stock: 15,
-            price: 15000000,
-            minStock: 5,
-            description: 'Laptop gaming high-end',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: 'sample2',
-            name: 'Kaos Polo Shirt',
-            sku: 'CLOTH-POL-001',
-            category: 'pakaian',
-            stock: 2,
-            price: 150000,
-            minStock: 10,
-            description: 'Kaos polo cotton premium',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        },
-        {
-            id: 'sample3',
-            name: 'Meja Kerja Minimalis',
-            sku: 'FURN-DSK-001',
-            category: 'perabotan',
-            stock: 0,
-            price: 800000,
-            minStock: 3,
-            description: 'Meja kerja modern minimal
+// Fallback jika ada error
+window.addEventListener('error', (e) => {
+    console.error('Global error:', e.error);
+});
